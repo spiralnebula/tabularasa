@@ -11,9 +11,12 @@ define({
 	},
 
 	make : function ( define ) { 
-		var state, body, content, self
-		self    = this
-		body    = this.library.transistor.make( this.library.morph.index_loop({
+
+		var state, body, content, self, event_circle, class_name
+
+		self                     = this
+		class_name               = define.class_name
+		body                     = this.library.transistor.make( this.library.morph.index_loop({
 			subject : define.tab,
 			into    : { 
 				"class" : define.class_name.main.wrap,
@@ -26,8 +29,9 @@ define({
 					"mark_as" : "tab_"+ loop.index,
 					"child"   : [
 						{ 
-							"class" : define.class_name.main.title,
-							"text"  : loop.indexed.title
+							"class"                 : define.class_name.main.title,
+							"data-tabularasa-title" : loop.indexed.title,
+							"text"                  : loop.indexed.title
 						}
 					]
 				})
@@ -40,104 +44,58 @@ define({
 			else_do : function ( loop ) {
 				var eloquent
 				eloquent = self.library.eloquent.make({
-					class_name : define.class_name.eloquent,
+					class_name : class_name.eloquent,
 					part       : loop.indexed.content
 				})
-
+				eloquent.transistor.body.style.display = "none"
 				eloquent.transistor.append( body.get("tab_"+ loop.index ).body )
 
 				return loop.into.concat( eloquent )
 			}
 		})
+		event_circle = Object.create( this.library.event_master ).make({
+			state  : {},
+			events : this.define_event({
+				body : body.body
+			})
+		})
+		event_circle.add_listener(this.define_listener())
 
 		body.append( define.append_to )
 	},
 
-	define_body : function () {
-		var self = this
-		return {
-			"class" : "package_call_logger_call_type_head",
-			"child" : [
-				{ 
-					"class" : "package_call_logger_call_type_head_title",
-					"text"  : define.text.title
-				},
-				{
-					"class" : "package_call_logger_call_type_head_script_wrap",
-					child   : this.library.morphism.index_loop({
-						array   : define.text.script,
-						else_do : function ( loop ) { 
-							if ( define.text.show.indexOf( loop.indexed.title ) < 0 ) {
-								return loop.into
-							}
-							return loop.into.concat({
-								"class" : "package_call_logger_call_type_head_script_body",
-								child   : [
-									{
-										"class"              : "package_call_logger_call_type_head_script_body_title",
-										"data-opening-state" : "closed",
-										"text"               : loop.indexed.title
-									},
-									{
-										"class"   : "package_call_logger_call_type_head_script_body_text_wrap",
-										"display" : "none",
-										child     : self.library.morphism.index_loop({
-											array   : loop.indexed.content,
-											else_do : function ( content_loop ) {
-												
-												var class_name, definition
+	define_event : function ( define ) {
+		return [
+			{ 
+				called       : "tab click",
+				that_happens : [
+					{ 
+						on : define.body,
+						is : [ "click" ]
+					}
+				],
+				only_if : function ( heard ) {
+					return ( heard.event.target.hasAttribute("data-tabularasa-title") )
+				}
+			}
+		]
+	},
 
-												definition = {
-													type      : "div",
-													attribute : {}
-												}
-												class_name = "package_call_logger_call_type_head_script_body_text_line"
+	define_listener : function () {
+		return [
+			{ 
+				for       : "tab click",
+				that_does : function ( heard ) {
+					if ( heard.event.target.nextSibling.style.display === "block" ) { 
+						heard.event.target.nextSibling.style.display = "none"
+					} else { 
+						heard.event.target.nextSibling.style.display = "block"
+					}
 
-												if ( content_loop.indexed.type === "bold" ) { 
-													class_name = "package_call_logger_call_type_head_script_body_text_bold_line"
-												}
-
-												if ( content_loop.indexed.type === "important" ) { 
-													class_name = "package_call_logger_call_type_head_script_body_text_important_line"
-												}
-
-												if ( content_loop.indexed.type === "list" ) {
-													class_name          = "package_call_logger_call_type_head_script_body_text_list_line"
-													definition.children = self.library.morphism.index_loop({
-														array   : content_loop.indexed.text,
-														else_do : function ( list_loop ) { 
-															return list_loop.into.concat({
-																"class" : "package_call_logger_call_type_head_script_body_text_list_line_member_wrap",
-																child : [
-																	{
-																		"class" : "package_call_logger_call_type_head_script_body_text_list_line_member_sign",
-																		"text"  : "-"
-																	},
-																	{
-																		"class" : "package_call_logger_call_type_head_script_body_text_list_line_member_text",
-																		"text"  : list_loop.indexed
-																	}
-																]
-															})
-														}
-													})
-												} else { 
-													definition.text = content_loop.indexed.text
-												}
-
-												definition["class"] = class_name
-
-												return content_loop.into.concat(definition)
-											}
-										})
-									}
-								]
-							})
-						}
-					})
-				},
-			]
-		}
+					return heard
+				}
+			}
+		]
 	}
-	
+
 })
